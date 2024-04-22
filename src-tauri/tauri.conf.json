@@ -15,13 +15,28 @@
       "shell": {
         "all": false,
         "open": true
+      },
+      "fs": {
+        "all": false,
+        "copyFile": false,
+        "createDir": false,
+        "exists": false,
+        "readDir": false,
+        "readFile": true,
+        "removeDir": false,
+        "removeFile": false,
+        "renameFile": false,
+        "scope": ["**"],
+        "writeFile": true
       }
     },
     "windows": [
       {
-        "title": "todo-list",
-        "width": 800,
-        "height": 600
+        "title": "Streaks",
+        "width": 450  ,
+        "height": 800,
+        "resizable": false,
+        "fullscreen": false
       }
     ],
     "security": {
