@@ -1,10 +1,11 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use sqlite::{self, Connection, State};
-use std::sync::Mutex;
+use serde::{Deserialize, Serialize};
+use sqlite::{self, Connection};
+use std::{sync::Mutex, vec};
 use tauri;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 struct TodoActivity {
     activity_title: String,
     activity_description: String,
@@ -12,9 +13,10 @@ struct TodoActivity {
 }
 
 impl TodoActivity {
-    fn insert(&self, conn: &Connection) {
+    fn insert(&self, conn: &Connection) -> Result<bool, String> {
         // insert to db
-        let mut query = conn.prepare("INSERT INTO tbl_activities (activity_title, activity_description) VALUES (:title, :description);").unwrap();
+        let mut query = conn.prepare(
+            "INSERT INTO tbl_activities (activity_title, activity_description) VALUES (:title, :description);").unwrap();
         query
             .bind((":title", self.activity_title.as_str()))
             .unwrap();
@@ -22,17 +24,32 @@ impl TodoActivity {
             .bind((":description", self.activity_description.as_str()))
             .unwrap();
 
-        while let Ok(State::Row) = query.next() {
-            println!(
-                "title = {}",
-                query.read::<String, _>("activity_title").unwrap()
-            );
-
-            println!(
-                "Description = {}",
-                query.read::<String, _>("activity_description").unwrap()
-            )
+        let state = query.next();
+        match state {
+            Ok(_) => Ok(true),
+            Err(error) => Err(error.message.unwrap()),
         }
+    }
+
+    fn fetch_activities(conn: &Connection) -> Vec<TodoActivity> {
+        let query = "SELECT * from tbl_activities";
+        let mut activities: Vec<TodoActivity> = vec![];
+        for row in conn
+            .prepare(query)
+            .unwrap()
+            .into_iter()
+            .map(|row| row.unwrap())
+        {
+            let acitivity = TodoActivity {
+                activity_description: row.read::<&str, _>("activity_description").to_string(),
+                activity_title: row.read::<&str, _>("activity_title").to_string(),
+                use_gen_ai: false,
+            };
+
+            activities.push(acitivity);
+        }
+
+        activities
     }
 }
 
@@ -73,7 +90,7 @@ fn create_activity(
     activity_title: &str,
     activity_description: &str,
     db_conn: tauri::State<AppState>,
-) {
+) -> Result<TodoActivity, String> {
     let todo_activity = TodoActivity {
         activity_description: activity_description.to_string(),
         activity_title: activity_title.to_string(),
@@ -82,13 +99,28 @@ fn create_activity(
 
     println!("{:?}", todo_activity);
     let conn_ref = &db_conn.0.lock().unwrap().sqlite_conn;
-    todo_activity.insert(conn_ref);
+    let payload = match todo_activity.insert(conn_ref) {
+        Ok(_) => Ok(todo_activity),
+        Err(err) => Err(err),
+    };
+    payload
+}
+
+#[tauri::command]
+fn get_activities(db_conn: tauri::State<AppState>) -> Vec<TodoActivity> {
+    let conn_ref = &db_conn.0.lock().unwrap().sqlite_conn;
+    let activities = TodoActivity::fetch_activities(conn_ref);
+    activities
 }
 
 fn main() {
     tauri::Builder::default()
         .manage(AppState(Mutex::new(TodoDb::init())))
-        .invoke_handler(tauri::generate_handler![greet, create_activity])
+        .invoke_handler(tauri::generate_handler![
+            greet,
+            create_activity,
+            get_activities
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
