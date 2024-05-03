@@ -71,7 +71,7 @@ export function Home() {
   }, [])
 
   return (
-    <div>
+    <div className="max-h-screen overflow-x-hidden">
       <Navbar title="Abhi's Todo" dialogTitle="New Activity 🏃‍♂️" handleDialogOpenChange={e => setDialogOpen(e)} dialogOpen={dialogOpen}>
         <Input
           placeholder='Activity Title'
@@ -96,10 +96,10 @@ export function Home() {
           <Card className="mb-2" key={idx}>
             <CardHeader>
               <CardTitle
-                className="cursor-pointer hover:text-green-600 transition-all">
+                className="cursor-pointer hover:text-green-600 transition-all select-none">
                 {activity.activityTitle}
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="select-none">
                 {/* <p>26<sup>th</sup> April 2024</p> */}
                 {activity.activityDescription}
               </CardDescription>
