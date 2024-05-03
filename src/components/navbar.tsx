@@ -1,16 +1,16 @@
 import { Plus } from "lucide-react";
-import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
-import { Input } from "./ui/input";
+import { PropsWithChildren } from "react";
 
 type NavbarProps = {
   title: string;
   description?: String;
   primaryAction?: Function;
+  dialogTitle?: string;
 }
 
 
-export function Navbar(props: NavbarProps) {
+export function Navbar(props: PropsWithChildren<NavbarProps>) {
   return (
     <nav className='w-screen p-4 flex flex-row justify-between'>
       <div className='flex flex-col gap-2 ml-3'>
@@ -21,17 +21,15 @@ export function Navbar(props: NavbarProps) {
       </div>
       <Dialog>
         <DialogTrigger>
-          <Plus color='white' />
+          <Plus className="light:fill-black"/>
         </DialogTrigger>
         <DialogContent className='w-5/6'>
           <DialogHeader className='gap-2'>
-            <DialogTitle>
-              Create an Item
+            <DialogTitle className="text-left">
+              {props.dialogTitle}
             </DialogTitle>
-            <DialogDescription className='flex gap-3'>
-              {/* Todo: this can be changed  */}
-              {/* <Input placeholder='Todo Item' onChange={e => setTodo(e.target.value)} />
-              <Button onClick={generateTodos}>Add Todo</Button> */}
+            <DialogDescription className='flex flex-col gap-3'>
+              {props.children}
             </DialogDescription>
           </DialogHeader>
         </DialogContent>

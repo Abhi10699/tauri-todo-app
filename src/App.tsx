@@ -43,9 +43,9 @@ function App() {
 
   return (
     <div className="flex flex-col h-screen w-screen">
-      <Navbar title="Abhi's Todo"/>
+      <Navbar title="Abhi's Todo" />
       <div className="flex-grow overflow-y-auto flex flex-col gap-3 p-4">
-       
+        
       </div>
     </div >
   );
