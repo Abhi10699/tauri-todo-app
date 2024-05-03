@@ -1,46 +1,53 @@
-import { useEffect, useState } from "react";
-import { writeTextFile, BaseDirectory } from '@tauri-apps/api/fs'
+import { useState } from 'react';
+import { Button } from './components/ui/button';
+import { Plus } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './components/ui/dialog';
+import { Input } from './components/ui/input';
+import { useGemini } from './hooks/useGemini';
+import { TodoCard } from './components/todo-card';
+import { Navbar } from './components/navbar';
 
-
-import "./App.css";
+interface TodoItem {
+  title: string;
+  taskDescription: string;
+  subtasks: Array<{
+    title: string,
+    subtasks: Array<{ title: string, description: string }>
+    description: string
+  }>
+}
 
 function App() {
 
   const [todo, setTodo] = useState('');
-  const [todos, setTodos] = useState<string[]>([]);
-
-  const handleAddTodo = async () => {
-    setTodos(() => [...todos, todo]);
-    setTodo(() => '');
-  }
+  const [todos, setTodos] = useState<TodoItem>();
+  const { sendChat } = useGemini();
 
 
-  const saveTodos = async () => {
-    console.log("Writing todos to file")
-    const todosJson = JSON.stringify({todos: todos}, null, 2);
-    await writeTextFile("todos.json", todosJson, {dir: BaseDirectory.AppLocalData});
-  }
-
-  useEffect(() => {
-    const intervalId = setInterval(saveTodos, 5000);
-    return () => {
-      clearInterval(intervalId)
+  const generateTodos = async () => {
+    const result = await sendChat(`You are a an expert in splitting a task into smaller subtasks. Given you a task,  divide the task into a smaller subtasks. For each subtask provide a title and description and also add smaller non overlapping subtask for that subtask. Structure your responses in a proper JSON format.
+    {
+      title: string,
+      taskDescription: string,
+      subtasks: Array<{
+        title: string,
+        description: string,
+      }>
     }
-  }, [])
+    Develop Todo list for: ${todo}.
+    MAKE SURE YOU STRUCTURE YOUR RESPONSE IN A VALID JSON FORMAT AND FOLLOW THE SCHEMA PROVIDED TO YOU.`);
+    const jsonResponse = await JSON.parse(result.replace("```json", "").replace('```', '').trim()) as TodoItem;
+    setTodos(jsonResponse)
+  }
+
 
   return (
-    <div className="container">
-      <h1>Streaks!</h1>
-      <div className="todoInput">
-        <input
-          placeholder="Your todo goes here!"
-          onChange={e => setTodo(e.target.value)}
-        />
-        <button onClick={handleAddTodo}>+</button>
+    <div className="flex flex-col h-screen w-screen">
+      <Navbar title="Abhi's Todo" />
+      <div className="flex-grow overflow-y-auto flex flex-col gap-3 p-4">
+        
       </div>
-
-      {todos.map(todo => <p>{todo}</p>)}
-    </div>
+    </div >
   );
 }
 
