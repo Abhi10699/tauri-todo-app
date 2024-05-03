@@ -26,6 +26,8 @@ interface INewActivityRs {
 export function Home() {
 
   const [activities, setActivities] = useState<INewActivity[]>([]);
+  const [dialogOpen, setDialogOpen] = useState(false);
+
 
   const { register, setValue, handleSubmit, getValues, reset } = useForm<INewActivity>({
     mode: "onChange",
@@ -45,6 +47,7 @@ export function Home() {
         useGenerativeAi: activityRes.use_gen_ai
       }]);
       reset(); // reset form
+      setDialogOpen(false);
     }
     catch (err) {
       console.log(err);
@@ -69,7 +72,7 @@ export function Home() {
 
   return (
     <div>
-      <Navbar title="Abhi's Todo" dialogTitle="New Activity 🏃‍♂️">
+      <Navbar title="Abhi's Todo" dialogTitle="New Activity 🏃‍♂️" handleDialogOpenChange={e => setDialogOpen(e)} dialogOpen={dialogOpen}>
         <Input
           placeholder='Activity Title'
           {...register('activityTitle')} />
@@ -89,8 +92,8 @@ export function Home() {
         <Button className="rounded-lg" onClick={handleSubmit(createActivity)}>Create ✨</Button>
       </Navbar>
       <div className="p-3">
-        {activities.map(activity =>
-          <Card className="mb-2">
+        {activities.map((activity, idx) =>
+          <Card className="mb-2" key={idx}>
             <CardHeader>
               <CardTitle
                 className="cursor-pointer hover:text-green-600 transition-all">
