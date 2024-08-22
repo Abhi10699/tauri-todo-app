@@ -1,36 +1,24 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
+import { Checkbox } from "./ui/checkbox";
 
 type TodoCardProps = {
   title: string;
   description: string;
-  subtasks: Array<{
-    title: string;
-    description: string;
-  }>
 }
 export function TodoCard(props: TodoCardProps) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{props.title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <CardDescription>
-          <p>{props.description}</p>
-          {props.subtasks.map(st =>
-          (
-            <div className="flex flex-col my-2 gap-2">
-              <div className='flex justify-center gap-3'>
-                <input type='checkbox' id={`todo-${st.title}`} />
-                <label htmlFor={`todo-${st.title}`}>
-                  {st.description.trim()}
-                </label>
-              </div>
-            </div>
-          )
-          )}
-        </CardDescription>
-      </CardContent>
+    <Card className="flex flex-row items-center">
+      <div className="flex-1">
+        <CardHeader>
+          <CardTitle>{props.title}</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-row">
+          <CardDescription className="flex-1">
+            <p>{props.description}</p>
+          </CardDescription>
+        </CardContent>
+      </div>
+      <Checkbox className="mx-10 w-5 h-5 rounded-lg" id="chkBox" />
     </Card>
   )
 }

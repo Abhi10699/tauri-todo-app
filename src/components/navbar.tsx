@@ -9,7 +9,7 @@ type NavbarProps = {
   dialogTitle?: string;
   dialogOpen?: boolean;
 
-  handleDialogOpenChange: (state: boolean) => void
+  handleDialogOpenChange?: (state: boolean) => void
 }
 
 

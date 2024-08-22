@@ -8,18 +8,21 @@ import { useForm } from 'react-hook-form';
 
 import { invoke } from '@tauri-apps/api';
 import { useEffect, useState } from "react";
+import { useNavigate } from 'react-router-dom';
 
 
 interface INewActivity {
   activityTitle: string;
   activityDescription: string,
-  useGenerativeAi: boolean
+  useGenerativeAi: boolean,
+  id: number
 }
 
 interface INewActivityRs {
-  activity_title: string;
-  activity_description: string,
-  use_gen_ai: boolean
+  group_title: string;
+  group_description: string,
+  use_gen_ai: boolean,
+  id: number
 }
 
 
@@ -28,6 +31,7 @@ export function Home() {
   const [activities, setActivities] = useState<INewActivity[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
 
+  const navigate = useNavigate();
 
   const { register, setValue, handleSubmit, getValues, reset } = useForm<INewActivity>({
     mode: "onChange",
@@ -42,9 +46,10 @@ export function Home() {
     try {
       const activityRes = await invoke<INewActivityRs>('create_activity', { ...formValues });
       setActivities([...activities, {
-        activityDescription: activityRes.activity_description,
-        activityTitle: activityRes.activity_title,
-        useGenerativeAi: activityRes.use_gen_ai
+        activityDescription: activityRes.group_title,
+        activityTitle: activityRes.group_description,
+        useGenerativeAi: activityRes.use_gen_ai,
+        id: activityRes.id
       }]);
       reset(); // reset form
       setDialogOpen(false);
@@ -56,11 +61,11 @@ export function Home() {
 
   const fetchActivities = async () => {
     const activities = await invoke<Array<INewActivityRs>>('get_activities');
-
     const activityArr = activities.map(activity => ({
-      activityDescription: activity.activity_description,
-      activityTitle: activity.activity_title,
-      useGenerativeAi: activity.use_gen_ai
+      activityDescription: activity.group_description,
+      activityTitle: activity.group_title,
+      useGenerativeAi: false, // TODO: this needs to be changed
+      id: activity.id
     }));
 
     setActivities(activityArr);
@@ -72,7 +77,12 @@ export function Home() {
 
   return (
     <div className="max-h-screen overflow-x-hidden">
-      <Navbar title="Abhi's Todo" dialogTitle="New Activity 🏃‍♂️" handleDialogOpenChange={e => setDialogOpen(e)} dialogOpen={dialogOpen}>
+      <Navbar
+        title="Abhi's Todo"
+        dialogTitle="New Activity 🏃‍♂️"
+        handleDialogOpenChange={e => setDialogOpen(e)}
+        dialogOpen={dialogOpen}
+      >
         <Input
           placeholder='Activity Title'
           {...register('activityTitle')} />
@@ -88,20 +98,23 @@ export function Home() {
             id="use-ai"
             onCheckedChange={e => setValue('useGenerativeAi', e)} />
         </div>
-        {/* TODO: Add Error handler */}
         <Button className="rounded-lg" onClick={handleSubmit(createActivity)}>Create ✨</Button>
       </Navbar>
       <div className="p-3">
-        {activities.map((activity, idx) =>
-          <Card className="mb-2" key={idx}>
+        {activities.map((activity) =>
+          <Card className="mb-2" key={activity.id}>
             <CardHeader>
               <CardTitle
-                className="cursor-pointer hover:text-green-600 transition-all select-none">
+                className="cursor-pointer hover:text-green-600 transition-all select-none"
+                onClick={e => navigate(`/${activity.id}`, {
+                  state: {
+                    isNew: false
+                  }
+                })}>
                 {activity.activityTitle}
               </CardTitle>
               <CardDescription className="select-none">
-                {/* <p>26<sup>th</sup> April 2024</p> */}
-                {activity.activityDescription}
+                {activity.activityDescription || "Activity description not available"}
               </CardDescription>
             </CardHeader>
           </Card>

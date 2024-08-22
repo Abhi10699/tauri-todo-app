@@ -7,8 +7,8 @@ export const router = createBrowserRouter([
     path: "/",
     element: <Home />,
   },
-  // {
-  //   path: "/:groupId",
-  //   element: <TodoGroup />
-  // }
+  {
+    path: "/:groupId",
+    element: <TodoGroup/>
+  }
 ])
