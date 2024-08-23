@@ -1,11 +1,9 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use serde::{Deserialize, Serialize};
-use sqlite::{self, Connection};
-use std::{sync::Mutex, vec};
+use std::sync::Mutex;
 use tauri;
 
-use todo_list::db::{TodoDb, TodoGroup};
+use todo_list::db::{TodoDb, TodoGroup, TodoItem};
 
 struct AppState(Mutex<TodoDb>);
 
@@ -15,7 +13,7 @@ fn greet(name: &str) -> String {
 }
 
 #[tauri::command]
-fn create_activity(
+fn create_group(
     activity_title: &str,
     activity_description: &str,
     db_conn: tauri::State<AppState>,
@@ -33,10 +31,37 @@ fn create_activity(
 }
 
 #[tauri::command]
-fn get_activities(db_conn: tauri::State<AppState>) -> Vec<TodoGroup> {
+fn add_group_item(
+    group_id: i64,
+    item_title: &str,
+    item_description: &str,
+    db_conn: tauri::State<AppState>,
+) -> TodoItem {
+    let mut todo_item = TodoItem {
+        item_description: item_description.to_string(),
+        item_title: item_title.to_string(),
+        id: 0, // find a better way
+        group_id: group_id as u32,
+        done: 0,
+    };
+
+    let conn_ref = &db_conn.0.lock().unwrap().sqlite_conn;
+    let _ = todo_item.create_item(conn_ref).unwrap();
+    todo_item
+}
+
+#[tauri::command]
+fn get_groups(db_conn: tauri::State<AppState>) -> Vec<TodoGroup> {
     let conn_ref = &db_conn.0.lock().unwrap().sqlite_conn;
     let activities = TodoGroup::fetch_all_groups(conn_ref);
     activities
+}
+
+#[tauri::command]
+fn get_group_items(group_id: i64, db_conn: tauri::State<AppState>) -> Vec<TodoItem> {
+    let conn_ref = &db_conn.0.lock().unwrap().sqlite_conn;
+    let group_items = TodoItem::fetch_all_group_items(group_id, conn_ref);
+    group_items
 }
 
 fn main() {
@@ -44,8 +69,10 @@ fn main() {
         .manage(AppState(Mutex::new(TodoDb::init())))
         .invoke_handler(tauri::generate_handler![
             greet,
-            create_activity,
-            get_activities
+            create_group,
+            get_groups,
+            get_group_items,
+            add_group_item
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

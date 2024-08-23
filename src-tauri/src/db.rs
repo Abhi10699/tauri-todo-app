@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 use sqlite::{Connection, State, Statement};
-use std::vec;
 
 pub trait Queries {
     fn insert_one() -> Statement<'static>;
@@ -65,7 +64,7 @@ impl TodoGroup {
             .unwrap();
 
         // execute quer
-        while let Ok(sqlite::State::Row) = query.next() {
+        while let Ok(State::Row) = query.next() {
             self.id = query.read::<i64, _>("id").unwrap() as u32;
         }
     }
@@ -105,7 +104,7 @@ impl TodoGroup {
         let query_state = statement.next();
         match query_state {
             Ok(state) => {
-                if (state == State::Row) {
+                if state == State::Row {
                     todo_group.id = statement.read::<i64, _>("id").unwrap() as u32;
                     todo_group.group_description =
                         statement.read::<String, _>("group_description").unwrap();
@@ -146,15 +145,15 @@ impl TodoGroup {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TodoItem {
-    id: u32,
-    item_title: String,
-    item_description: String,
-    group_id: u32,
-    done: u8,
+    pub id: u32,
+    pub item_title: String,
+    pub item_description: String,
+    pub group_id: u32,
+    pub done: u8,
 }
 impl TodoItem {
-    pub fn create_item(self, conn: &Connection) -> Result<bool, String> {
-        let query = "INSERT INTO tbl_todos (item_title, item_description, done) VALUES(:title, :description, 0)";
+    pub fn create_item(&mut self, conn: &Connection) -> Result<bool, String> {
+        let query = "INSERT INTO tbl_todos (item_title, item_description, group_id) VALUES(:title, :description, :group_id)";
         let mut statement = conn.prepare(query).unwrap();
         statement
             .bind((":title", self.item_title.as_str()))
@@ -163,33 +162,49 @@ impl TodoItem {
             .bind((":description", self.item_description.as_str()))
             .unwrap();
 
+        statement.bind((":group_id", self.group_id as i64)).unwrap();
+
         let query_state = statement.next();
+
         match query_state {
-            Ok(_) => Ok(true),
+            Ok(_) => {
+                // we get row here sinc
+                while let Ok(State::Row) = statement.next() {
+                    self.id = statement.read::<i64, _>("id").unwrap() as u32;
+                }
+                Ok(true)
+            }
             Err(err) => Err(err.message).unwrap(),
         }
     }
 
-    pub fn fetch_all_group_items(group_id: u8, conn: &Connection) -> Vec<TodoItem> {
+    pub fn fetch_all_group_items(group_id: i64, conn: &Connection) -> Vec<TodoItem> {
         let query = "SELECT * FROM tbl_todos WHERE group_id = :id";
         let mut statement = conn.prepare(query).unwrap();
-        statement.bind(("id", group_id as i64)).unwrap();
-        let rows = statement.into_iter().map(|f| f.unwrap());
-        let mut todos: Vec<TodoItem> = vec![];
+        statement.bind((":id", group_id)).unwrap();
 
-        for row in rows {
-            let todo_item = TodoItem {
-                done: row.read::<i64, _>("id") as u8,
-                item_title: row.read::<&str, _>("item_title").to_string(),
-                item_description: row.read::<&str, _>("item_title").to_string(),
-                group_id: row.read::<i64, _>("group_id") as u32,
-                id: row.read::<i64, _>("id") as u32,
-            };
+        let query_state = statement.next();
 
-            todos.push(todo_item);
+        match query_state {
+            Ok(_) => {
+                let mut todos: Vec<TodoItem> = vec![];
+                while let Ok(State::Row) = statement.next() {
+                    let todo_item = TodoItem {
+                        done: statement.read::<i64, _>("done").unwrap() as u8,
+                        item_title: statement.read::<String, _>("item_title").unwrap(),
+                        item_description: statement.read::<String, _>("item_description").unwrap(),
+                        group_id: statement.read::<i64, _>("group_id").unwrap() as u32,
+                        id: statement.read::<i64, _>("id").unwrap() as u32,
+                    };
+                    todos.push(todo_item);
+                }
+                todos
+            }
+            Err(err) => {
+                println!("Error message: {}", err.message.unwrap());
+                return vec![];
+            }
         }
-
-        todos
     }
 
     pub fn update_item(item_id: u8, new_item: TodoItem) {}

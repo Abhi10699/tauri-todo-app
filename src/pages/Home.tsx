@@ -44,7 +44,7 @@ export function Home() {
 
   const createActivity = async (formValues: INewActivity) => {
     try {
-      const activityRes = await invoke<INewActivityRs>('create_activity', { ...formValues });
+      const activityRes = await invoke<INewActivityRs>('create_group', { ...formValues });
       setActivities([...activities, {
         activityDescription: activityRes.group_title,
         activityTitle: activityRes.group_description,
@@ -60,13 +60,15 @@ export function Home() {
   }
 
   const fetchActivities = async () => {
-    const activities = await invoke<Array<INewActivityRs>>('get_activities');
+    const activities = await invoke<Array<INewActivityRs>>('get_groups');
     const activityArr = activities.map(activity => ({
       activityDescription: activity.group_description,
       activityTitle: activity.group_title,
       useGenerativeAi: false, // TODO: this needs to be changed
       id: activity.id
     }));
+
+    console.log(activityArr);
 
     setActivities(activityArr);
   }
@@ -108,7 +110,9 @@ export function Home() {
                 className="cursor-pointer hover:text-green-600 transition-all select-none"
                 onClick={e => navigate(`/${activity.id}`, {
                   state: {
-                    isNew: false
+                    isNew: false,
+                    navTitle: activity.activityTitle,
+                    navDesc: activity.activityDescription
                   }
                 })}>
                 {activity.activityTitle}
