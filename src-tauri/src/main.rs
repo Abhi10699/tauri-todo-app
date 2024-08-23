@@ -37,6 +37,7 @@ fn add_group_item(
     item_description: &str,
     db_conn: tauri::State<AppState>,
 ) -> TodoItem {
+    println!("Called Once");
     let mut todo_item = TodoItem {
         item_description: item_description.to_string(),
         item_title: item_title.to_string(),
@@ -46,7 +47,7 @@ fn add_group_item(
     };
 
     let conn_ref = &db_conn.0.lock().unwrap().sqlite_conn;
-    let _ = todo_item.create_item(conn_ref).unwrap();
+    todo_item.create_item(conn_ref);
     todo_item
 }
 

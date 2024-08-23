@@ -24,7 +24,7 @@ export function TodoGroup() {
   const { state } = useLocation();
 
 
-  const { register, handleSubmit, reset } = useForm({
+  const { register, handleSubmit, reset, formState } = useForm({
     mode: "onChange",
     defaultValues: {
       itemTitle: '',
@@ -35,7 +35,7 @@ export function TodoGroup() {
 
   const addItem = async (itemInfo: any) => {
     // TODO: need refactoring
-    if(!groupId) {
+    if (!groupId) {
       return
     }
     setGroupItems([...groupItems, {
@@ -69,7 +69,6 @@ export function TodoGroup() {
       done: item.done
     }));
 
-    console.log(items);
     setGroupItems(items);
   }
 
@@ -84,11 +83,11 @@ export function TodoGroup() {
   return (
     <>
       <Navbar title={state.navTitle || 'Title'} dialogTitle="Add Item" description={state.navDesc || 'Description'}>
-        <Input placeholder='Activity Title' {...register('itemTitle')} />
+        <Input placeholder='Activity Title' {...register('itemTitle', { required: true })} required/>
         <Textarea placeholder="Briefly Describe your activity, what will you be doing?"
           rows={10}
           {...register('itemDescription')}></Textarea>
-        <Button onClick={handleSubmit(addItem)}>Add</Button>
+        <Button onClick={handleSubmit(addItem)} disabled={!formState.isValid}>Add</Button>
       </Navbar>
       {
         groupItems.length == 0 ? (

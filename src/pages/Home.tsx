@@ -46,8 +46,8 @@ export function Home() {
     try {
       const activityRes = await invoke<INewActivityRs>('create_group', { ...formValues });
       setActivities([...activities, {
-        activityDescription: activityRes.group_title,
-        activityTitle: activityRes.group_description,
+        activityDescription: activityRes.group_description,
+        activityTitle: activityRes.group_title,
         useGenerativeAi: activityRes.use_gen_ai,
         id: activityRes.id
       }]);
@@ -67,8 +67,6 @@ export function Home() {
       useGenerativeAi: false, // TODO: this needs to be changed
       id: activity.id
     }));
-
-    console.log(activityArr);
 
     setActivities(activityArr);
   }

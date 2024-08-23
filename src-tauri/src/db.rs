@@ -152,8 +152,8 @@ pub struct TodoItem {
     pub done: u8,
 }
 impl TodoItem {
-    pub fn create_item(&mut self, conn: &Connection) -> Result<bool, String> {
-        let query = "INSERT INTO tbl_todos (item_title, item_description, group_id) VALUES(:title, :description, :group_id)";
+    pub fn create_item(&mut self, conn: &Connection){
+        let query = "INSERT INTO tbl_todos (item_title, item_description, group_id, done) VALUES(:title, :description, :group_id, 0)";
         let mut statement = conn.prepare(query).unwrap();
         statement
             .bind((":title", self.item_title.as_str()))
@@ -164,17 +164,8 @@ impl TodoItem {
 
         statement.bind((":group_id", self.group_id as i64)).unwrap();
 
-        let query_state = statement.next();
-
-        match query_state {
-            Ok(_) => {
-                // we get row here sinc
-                while let Ok(State::Row) = statement.next() {
-                    self.id = statement.read::<i64, _>("id").unwrap() as u32;
-                }
-                Ok(true)
-            }
-            Err(err) => Err(err.message).unwrap(),
+        while let Ok(State::Row) = statement.next() {
+            self.id = statement.read::<i64, _>("id").unwrap() as u32;
         }
     }
 
